@@ -8,8 +8,8 @@
         body {
             font-family: 'Arial', sans-serif;
             background-color: #121212;
-            /* USING YOUR UPLOADED FILE NAME HERE: */
-            background-image: linear-gradient(rgba(0,0,0,0.85), rgba(0,0,0,0.85)), url('1371.png');
+            /* IMAGE FILE NAME MUST MATCH EXACTLY: */
+            background-image: linear-gradient(rgba(0,0,0,0.85), rgba(0,0,0,0.85)), url('logo.png');
             background-size: contain;
             background-position: center;
             background-repeat: no-repeat;
@@ -59,7 +59,6 @@
             transform: scale(1.1);
         }
 
-        /* Replaced Input box with text div for better formatting (MM:SS) */
         .time-display-box { 
             font-size: 2.5rem; 
             width: 140px; 
@@ -142,7 +141,7 @@
         let isWorking = true;
         let isPaused = false;
         
-        // Time stored in SECONDS now for easier 30s math
+        // Time stored in SECONDS
         let setupWorkSeconds = 300; // Default 5:00
         let setupRestSeconds = 60;  // Default 1:00
         let currentSeconds = 0;
@@ -162,19 +161,14 @@
             gain.connect(audioCtx.destination);
             gain.gain.value = vol;
             osc.start();
-            // Smooth decay for bell effect
             gain.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + duration);
             osc.stop(audioCtx.currentTime + duration);
         }
 
-        // 3 Bell Sounds (Ding... Ding... Ding...)
+        // 3 Bell Sounds
         function playBellSequence() {
-            let now = audioCtx.currentTime;
-            // Bell 1
             setTimeout(() => playTone(660, 'triangle', 1.5, 0.8), 0);
-            // Bell 2
             setTimeout(() => playTone(660, 'triangle', 1.5, 0.8), 600);
-            // Bell 3
             setTimeout(() => playTone(660, 'triangle', 2.5, 0.8), 1200);
         }
 
@@ -264,7 +258,7 @@
             isWorking = true;
             currentSeconds = setupWorkSeconds;
             updateUI("ROLL", "rolling-bg", "text-roll");
-            playBellSequence(); // 3 BELLS
+            playBellSequence(); 
             runInterval();
         }
 
@@ -272,7 +266,7 @@
             isWorking = false;
             currentSeconds = setupRestSeconds;
             updateUI("REST", "resting-bg", "text-rest");
-            playBellSequence(); // 3 BELLS
+            playBellSequence();
             runInterval();
         }
 
@@ -287,7 +281,7 @@
 
                 // 30 Seconds Warning
                 if (isWorking && currentSeconds === 30) {
-                    play3Beeps(); // 3 BEEPS
+                    play3Beeps();
                     const statusEl = document.getElementById('status');
                     statusEl.innerText = "30 SECONDS!";
                     statusEl.classList.add('text-warn');
@@ -329,311 +323,8 @@
             location.reload();
         }
         
-        // Init
         updateHighlights();
     </script>
 </body>
 </html>
-            text-transform: uppercase; 
-            letter-spacing: 5px; 
-            margin-bottom: 10px;
-            font-weight: bold;
-            text-shadow: 2px 2px 4px rgba(0,0,0,1);
-        }
 
-        /* --- SETUP INPUTS --- */
-        .input-group {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 10px;
-            padding: 10px;
-            border: 3px solid transparent; /* Invisible border by default */
-            border-radius: 10px;
-            transition: 0.2s;
-        }
-
-        /* The "Selected" look for navigation */
-        .selected {
-            border: 3px solid #facc15; /* Gold Border */
-            background-color: rgba(255, 255, 255, 0.1);
-            transform: scale(1.1);
-        }
-
-        input { 
-            font-size: 2.5rem; 
-            width: 100px; 
-            text-align: center; 
-            padding: 10px; 
-            border: none; 
-            background: rgba(255,255,255,0.9);
-            color: black;
-            border-radius: 5px;
-        }
-        
-        label { 
-            font-size: 2rem; 
-            font-weight: bold; 
-            margin-right: 15px;
-            text-shadow: 2px 2px 4px black;
-        }
-
-        /* Start Button */
-        #start-btn { 
-            font-size: 2rem; 
-            padding: 15px 40px; 
-            margin-top: 20px;
-            background-color: #0056b3; 
-            color: white; 
-            border: 3px solid transparent; 
-            border-radius: 8px; 
-            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
-        }
-        
-        /* State Colors */
-        .rolling-bg { box-shadow: inset 0 0 100px 50px rgba(0, 255, 0, 0.1); border: 10px solid #28a745; }
-        .resting-bg { box-shadow: inset 0 0 100px 50px rgba(255, 0, 0, 0.1); border: 10px solid #dc3545; }
-        .text-roll { color: #4ade80; }
-        .text-rest { color: #f87171; }
-        .text-warn { color: #facc15; }
-
-        .hidden { display: none; }
-        
-        .instructions {
-            margin-top: 40px;
-            color: #aaa;
-            font-size: 1.2rem;
-            line-height: 1.5;
-        }
-    </style>
-</head>
-<body>
-
-    <div id="setup-screen" class="setup">
-        <h1 style="text-shadow: 2px 2px 4px black; margin-bottom: 30px;">JIU-JITSU TIMER</h1>
-        
-        <div class="input-group selected" id="sel-0">
-            <label>ROUND:</label> 
-            <input type="number" id="workMin" value="5" readonly> 
-            <label>MIN</label>
-        </div>
-
-        <div class="input-group" id="sel-1">
-            <label>REST:</label> 
-            <input type="number" id="restMin" value="1" readonly> 
-            <label>MIN</label>
-        </div>
-
-        <button id="start-btn" class="input-group" id="sel-2">START TIMER</button>
-
-        <div class="instructions">
-            <strong>REMOTE CONTROLS:</strong><br>
-            ⬅ ➡ Switch Selection<br>
-            ⬆ ⬇ Change Time<br>
-            Center Button: Select / Pause
-        </div>
-    </div>
-
-    <div id="timer-screen" class="hidden">
-        <div id="status">PREPARE</div>
-        <div id="timer-display">00:00</div>
-    </div>
-
-    <script>
-        // --- STATE VARIABLES ---
-        let interval;
-        let isWorking = true;
-        let isPaused = false;
-        let totalSeconds = 0;
-        let workSeconds = 0;
-        let restSeconds = 0;
-        
-        // Navigation State (0=Work, 1=Rest, 2=StartBtn)
-        let currentSelection = 0; 
-
-        // --- AUDIO SYSTEM ---
-        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        
-        function playTone(freq, type, duration, vol=1) {
-            if (audioCtx.state === 'suspended') audioCtx.resume();
-            const osc = audioCtx.createOscillator();
-            const gain = audioCtx.createGain();
-            osc.type = type;
-            osc.frequency.value = freq;
-            osc.connect(gain);
-            gain.connect(audioCtx.destination);
-            gain.gain.value = vol;
-            osc.start();
-            gain.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + duration);
-            osc.stop(audioCtx.currentTime + duration);
-        }
-
-        function playStartSound() { playTone(600, 'square', 0.6); } 
-        function playRestSound() { playTone(200, 'sawtooth', 0.8); } 
-        function play30SecWarning() { 
-            playTone(800, 'sine', 0.15); 
-            setTimeout(() => playTone(800, 'sine', 0.15), 200);
-        }
-
-        // --- REMOTE CONTROL LOGIC ---
-        document.addEventListener('keydown', function(e) {
-            const key = e.keyCode;
-            const isSetup = !document.getElementById('setup-screen').classList.contains('hidden');
-
-            if (isSetup) {
-                handleSetupNav(key);
-            } else {
-                handleTimerNav(key);
-            }
-        });
-
-        function handleSetupNav(key) {
-            // LEFT (37) or UP (38) -> Move selection UP/LEFT
-            // RIGHT (39) or DOWN (40) -> Move selection DOWN/RIGHT
-            // WAIT - Standard TV nav usually prefers:
-            // Left/Right to switch fields, Up/Down to change values. Let's do that.
-
-            if (key === 37) { // Left Arrow
-                currentSelection--;
-                if (currentSelection < 0) currentSelection = 2;
-                updateHighlights();
-            } else if (key === 39) { // Right Arrow
-                currentSelection++;
-                if (currentSelection > 2) currentSelection = 0;
-                updateHighlights();
-            } 
-            else if (key === 38) { // Up Arrow (Increase Value)
-                changeValue(1);
-            } 
-            else if (key === 40) { // Down Arrow (Decrease Value)
-                changeValue(-1);
-            }
-            else if (key === 13 || key === 179) { // Enter or Play/Pause
-                if (currentSelection === 2) startTimer();
-            }
-        }
-
-        function handleTimerNav(key) {
-            // Enter (13) or Play (179) -> Pause
-            if (key === 13 || key === 179) {
-                togglePause();
-            }
-            // Up Arrow (38) -> Reset
-            if (key === 38) {
-                resetTimer();
-            }
-        }
-
-        function updateHighlights() {
-            // Clear all
-            document.getElementById('sel-0').classList.remove('selected');
-            document.getElementById('sel-1').classList.remove('selected');
-            document.getElementById('start-btn').classList.remove('selected');
-
-            // Set new
-            if (currentSelection === 0) document.getElementById('sel-0').classList.add('selected');
-            if (currentSelection === 1) document.getElementById('sel-1').classList.add('selected');
-            if (currentSelection === 2) document.getElementById('start-btn').classList.add('selected');
-        }
-
-        function changeValue(amount) {
-            let el;
-            if (currentSelection === 0) el = document.getElementById('workMin');
-            if (currentSelection === 1) el = document.getElementById('restMin');
-            
-            if (el) {
-                let val = parseInt(el.value) + amount;
-                if (val < 1) val = 1; // Minimum 1 min
-                if (val > 60) val = 60; // Max 60 min
-                el.value = val;
-            }
-        }
-
-        // --- TIMER LOGIC (Same as before) ---
-        function startTimer() {
-            const wMin = parseInt(document.getElementById('workMin').value);
-            const rMin = parseInt(document.getElementById('restMin').value);
-            workSeconds = wMin * 60;
-            restSeconds = rMin * 60;
-            
-            document.getElementById('setup-screen').classList.add('hidden');
-            document.getElementById('timer-screen').classList.remove('hidden');
-            if (audioCtx.state === 'suspended') audioCtx.resume();
-            startRound();
-        }
-
-        function startRound() {
-            isWorking = true;
-            totalSeconds = workSeconds;
-            updateUI("ROLL", "rolling-bg", "text-roll");
-            playStartSound();
-            runInterval();
-        }
-
-        function startRest() {
-            isWorking = false;
-            totalSeconds = restSeconds;
-            updateUI("REST", "resting-bg", "text-rest");
-            playRestSound();
-            runInterval();
-        }
-
-        function runInterval() {
-            clearInterval(interval);
-            isPaused = false;
-            updateDisplay();
-            interval = setInterval(() => {
-                if (isPaused) return;
-                totalSeconds--;
-                updateDisplay();
-
-                if (isWorking && totalSeconds === 30) {
-                    play30SecWarning();
-                    const statusEl = document.getElementById('status');
-                    statusEl.innerText = "30 SECONDS!";
-                    statusEl.classList.add('text-warn');
-                    setTimeout(() => {
-                        statusEl.innerText = "ROLL";
-                        statusEl.classList.remove('text-warn');
-                        statusEl.classList.add('text-roll');
-                    }, 2500);
-                }
-
-                if (totalSeconds < 0) {
-                    clearInterval(interval);
-                    if (isWorking) startRest();
-                    else startRound();
-                }
-            }, 1000);
-        }
-
-        function updateUI(text, bg, color) {
-            document.body.className = bg;
-            const s = document.getElementById('status');
-            const t = document.getElementById('timer-display');
-            s.innerText = text;
-            s.className = ""; t.className = ""; // clear
-            s.classList.add(color); t.classList.add(color);
-        }
-
-        function updateDisplay() {
-            const m = Math.floor(totalSeconds / 60).toString().padStart(2, '0');
-            const s = (totalSeconds % 60).toString().padStart(2, '0');
-            document.getElementById('timer-display').innerText = `${m}:${s}`;
-        }
-
-        function togglePause() {
-            isPaused = !isPaused;
-            document.getElementById('status').innerText = isPaused ? "PAUSED" : (isWorking ? "ROLL" : "REST");
-        }
-
-        function resetTimer() {
-            clearInterval(interval);
-            location.reload();
-        }
-        
-        // Initialize highlight
-        updateHighlights();
-    </script>
-</body>
-</html>
