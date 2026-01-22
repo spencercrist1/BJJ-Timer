@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Carlson Gracie Team Timer</title>
+    <title>Carlson Gracie Timer</title>
     <style>
         body {
             font-family: 'Arial', sans-serif;
             background-color: #121212;
-            /* Carlson Gracie Logo Background */
-            background-image: linear-gradient(rgba(0,0,0,0.85), rgba(0,0,0,0.85)), url('logo.png');
+            /* USING YOUR UPLOADED FILE NAME HERE: */
+            background-image: linear-gradient(rgba(0,0,0,0.85), rgba(0,0,0,0.85)), url('1371.png');
             background-size: contain;
             background-position: center;
             background-repeat: no-repeat;
@@ -34,6 +34,306 @@
         
         #status { 
             font-size: 6vw; 
+            text-transform: uppercase; 
+            letter-spacing: 5px; 
+            margin-bottom: 10px;
+            font-weight: bold;
+            text-shadow: 2px 2px 4px rgba(0,0,0,1);
+        }
+
+        /* --- SETUP INPUTS --- */
+        .input-group {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 10px;
+            padding: 10px;
+            border: 3px solid transparent; 
+            border-radius: 10px;
+            transition: 0.2s;
+        }
+
+        .selected {
+            border: 3px solid #facc15; /* Gold Border for selection */
+            background-color: rgba(255, 255, 255, 0.1);
+            transform: scale(1.1);
+        }
+
+        /* Replaced Input box with text div for better formatting (MM:SS) */
+        .time-display-box { 
+            font-size: 2.5rem; 
+            width: 140px; 
+            text-align: center; 
+            padding: 10px; 
+            background: rgba(255,255,255,0.9);
+            color: black;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        
+        label { 
+            font-size: 2rem; 
+            font-weight: bold; 
+            margin-right: 15px;
+            text-shadow: 2px 2px 4px black;
+        }
+
+        #start-btn { 
+            font-size: 2rem; 
+            padding: 15px 40px; 
+            margin-top: 20px;
+            background-color: #0056b3; 
+            color: white; 
+            border: 3px solid transparent; 
+            border-radius: 8px; 
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        }
+        
+        /* State Colors */
+        .rolling-bg { box-shadow: inset 0 0 100px 50px rgba(0, 255, 0, 0.1); border: 10px solid #28a745; }
+        .resting-bg { box-shadow: inset 0 0 100px 50px rgba(255, 0, 0, 0.1); border: 10px solid #dc3545; }
+        .text-roll { color: #4ade80; }
+        .text-rest { color: #f87171; }
+        .text-warn { color: #facc15; }
+
+        .hidden { display: none; }
+        
+        .instructions {
+            margin-top: 40px;
+            color: #aaa;
+            font-size: 1.2rem;
+            line-height: 1.5;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="setup-screen" class="setup">
+        <h1 style="text-shadow: 2px 2px 4px black; margin-bottom: 30px;">JIU-JITSU TIMER</h1>
+        
+        <div class="input-group selected" id="sel-0">
+            <label>ROUND:</label> 
+            <div id="workDisplay" class="time-display-box">5:00</div>
+        </div>
+
+        <div class="input-group" id="sel-1">
+            <label>REST:</label> 
+            <div id="restDisplay" class="time-display-box">1:00</div>
+        </div>
+
+        <button id="start-btn" class="input-group" id="sel-2">START TIMER</button>
+
+        <div class="instructions">
+            <strong>REMOTE CONTROLS:</strong><br>
+            ⬅ ➡ Switch Selection<br>
+            ⬆ ⬇ Adjust Time (30s)<br>
+            Center Button: Select / Pause
+        </div>
+    </div>
+
+    <div id="timer-screen" class="hidden">
+        <div id="status">PREPARE</div>
+        <div id="timer-display">00:00</div>
+    </div>
+
+    <script>
+        // --- STATE VARIABLES ---
+        let interval;
+        let isWorking = true;
+        let isPaused = false;
+        
+        // Time stored in SECONDS now for easier 30s math
+        let setupWorkSeconds = 300; // Default 5:00
+        let setupRestSeconds = 60;  // Default 1:00
+        let currentSeconds = 0;
+        
+        let currentSelection = 0; 
+
+        // --- AUDIO SYSTEM ---
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        
+        function playTone(freq, type, duration, vol=1) {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = type;
+            osc.frequency.value = freq;
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            gain.gain.value = vol;
+            osc.start();
+            // Smooth decay for bell effect
+            gain.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + duration);
+            osc.stop(audioCtx.currentTime + duration);
+        }
+
+        // 3 Bell Sounds (Ding... Ding... Ding...)
+        function playBellSequence() {
+            let now = audioCtx.currentTime;
+            // Bell 1
+            setTimeout(() => playTone(660, 'triangle', 1.5, 0.8), 0);
+            // Bell 2
+            setTimeout(() => playTone(660, 'triangle', 1.5, 0.8), 600);
+            // Bell 3
+            setTimeout(() => playTone(660, 'triangle', 2.5, 0.8), 1200);
+        }
+
+        // 3 Fast Beeps
+        function play3Beeps() {
+            setTimeout(() => playTone(800, 'square', 0.1, 0.5), 0);
+            setTimeout(() => playTone(800, 'square', 0.1, 0.5), 150);
+            setTimeout(() => playTone(800, 'square', 0.1, 0.5), 300);
+        }
+
+        // --- REMOTE CONTROL LOGIC ---
+        document.addEventListener('keydown', function(e) {
+            const key = e.keyCode;
+            const isSetup = !document.getElementById('setup-screen').classList.contains('hidden');
+
+            if (isSetup) {
+                handleSetupNav(key);
+            } else {
+                handleTimerNav(key);
+            }
+        });
+
+        function handleSetupNav(key) {
+            if (key === 37) { // Left
+                currentSelection--;
+                if (currentSelection < 0) currentSelection = 2;
+                updateHighlights();
+            } else if (key === 39) { // Right
+                currentSelection++;
+                if (currentSelection > 2) currentSelection = 0;
+                updateHighlights();
+            } 
+            else if (key === 38) { // Up (Add 30s)
+                changeTime(30);
+            } 
+            else if (key === 40) { // Down (Subtract 30s)
+                changeTime(-30);
+            }
+            else if (key === 13 || key === 179) { // Enter
+                if (currentSelection === 2) startTimer();
+            }
+        }
+
+        function handleTimerNav(key) {
+            if (key === 13 || key === 179) togglePause();
+            if (key === 38) resetTimer();
+        }
+
+        function updateHighlights() {
+            document.getElementById('sel-0').classList.remove('selected');
+            document.getElementById('sel-1').classList.remove('selected');
+            document.getElementById('start-btn').classList.remove('selected');
+
+            if (currentSelection === 0) document.getElementById('sel-0').classList.add('selected');
+            if (currentSelection === 1) document.getElementById('sel-1').classList.add('selected');
+            if (currentSelection === 2) document.getElementById('start-btn').classList.add('selected');
+        }
+
+        function changeTime(amount) {
+            if (currentSelection === 0) {
+                setupWorkSeconds += amount;
+                if (setupWorkSeconds < 30) setupWorkSeconds = 30;
+                document.getElementById('workDisplay').innerText = formatTime(setupWorkSeconds);
+            }
+            if (currentSelection === 1) {
+                setupRestSeconds += amount;
+                if (setupRestSeconds < 30) setupRestSeconds = 30;
+                document.getElementById('restDisplay').innerText = formatTime(setupRestSeconds);
+            }
+        }
+
+        function formatTime(sec) {
+            const m = Math.floor(sec / 60);
+            const s = sec % 60;
+            return `${m}:${s.toString().padStart(2, '0')}`;
+        }
+
+        // --- TIMER LOGIC ---
+        function startTimer() {
+            document.getElementById('setup-screen').classList.add('hidden');
+            document.getElementById('timer-screen').classList.remove('hidden');
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            startRound();
+        }
+
+        function startRound() {
+            isWorking = true;
+            currentSeconds = setupWorkSeconds;
+            updateUI("ROLL", "rolling-bg", "text-roll");
+            playBellSequence(); // 3 BELLS
+            runInterval();
+        }
+
+        function startRest() {
+            isWorking = false;
+            currentSeconds = setupRestSeconds;
+            updateUI("REST", "resting-bg", "text-rest");
+            playBellSequence(); // 3 BELLS
+            runInterval();
+        }
+
+        function runInterval() {
+            clearInterval(interval);
+            isPaused = false;
+            updateDisplay();
+            interval = setInterval(() => {
+                if (isPaused) return;
+                currentSeconds--;
+                updateDisplay();
+
+                // 30 Seconds Warning
+                if (isWorking && currentSeconds === 30) {
+                    play3Beeps(); // 3 BEEPS
+                    const statusEl = document.getElementById('status');
+                    statusEl.innerText = "30 SECONDS!";
+                    statusEl.classList.add('text-warn');
+                    setTimeout(() => {
+                        statusEl.innerText = "ROLL";
+                        statusEl.classList.remove('text-warn');
+                        statusEl.classList.add('text-roll');
+                    }, 2500);
+                }
+
+                if (currentSeconds < 0) {
+                    clearInterval(interval);
+                    if (isWorking) startRest();
+                    else startRound();
+                }
+            }, 1000);
+        }
+
+        function updateUI(text, bg, color) {
+            document.body.className = bg;
+            const s = document.getElementById('status');
+            const t = document.getElementById('timer-display');
+            s.innerText = text;
+            s.className = ""; t.className = ""; 
+            s.classList.add(color); t.classList.add(color);
+        }
+
+        function updateDisplay() {
+            document.getElementById('timer-display').innerText = formatTime(currentSeconds);
+        }
+
+        function togglePause() {
+            isPaused = !isPaused;
+            document.getElementById('status').innerText = isPaused ? "PAUSED" : (isWorking ? "ROLL" : "REST");
+        }
+
+        function resetTimer() {
+            clearInterval(interval);
+            location.reload();
+        }
+        
+        // Init
+        updateHighlights();
+    </script>
+</body>
+</html>
             text-transform: uppercase; 
             letter-spacing: 5px; 
             margin-bottom: 10px;
