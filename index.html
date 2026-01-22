@@ -8,7 +8,8 @@
         body {
             font-family: 'Arial', sans-serif;
             background-color: #121212;
-            background-image: linear-gradient(rgba(0,0,0,0.85), rgba(0,0,0,0.85)), url('logo.png');
+            /* BACKGROUND IMAGE */
+            background-image: linear-gradient(rgba(0,0,0,0.85), rgba(0,0,0,0.85)), url('1371.png');
             background-size: contain;
             background-position: center;
             background-repeat: no-repeat;
@@ -23,7 +24,7 @@
             overflow: hidden;
         }
 
-        /* --- TIMER DISPLAY --- */
+        /* --- DISPLAY --- */
         #timer-display { 
             font-size: 25vw; 
             font-weight: bold; 
@@ -53,7 +54,7 @@
         }
 
         .selected {
-            border: 3px solid #facc15; /* Gold Border for selection */
+            border: 3px solid #facc15; 
             background-color: rgba(255, 255, 255, 0.1);
             transform: scale(1.1);
         }
@@ -135,47 +136,28 @@
     </div>
 
     <script>
-        // --- STATE VARIABLES ---
+        // --- CONFIG ---
         let interval;
         let isWorking = true;
         let isPaused = false;
-        
-        // Time stored in SECONDS
-        let setupWorkSeconds = 300; // Default 5:00
-        let setupRestSeconds = 60;  // Default 1:00
+        let setupWorkSeconds = 300; 
+        let setupRestSeconds = 60;
         let currentSeconds = 0;
-        
         let currentSelection = 0; 
 
-        // --- AUDIO SYSTEM ---
-        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        
-        function playTone(freq, type, duration, vol=1) {
-            if (audioCtx.state === 'suspended') audioCtx.resume();
-            const osc = audioCtx.createOscillator();
-            const gain = audioCtx.createGain();
-            osc.type = type;
-            osc.frequency.value = freq;
-            osc.connect(gain);
-            gain.connect(audioCtx.destination);
-            gain.gain.value = vol;
-            osc.start();
-            gain.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + duration);
-            osc.stop(audioCtx.currentTime + duration);
+        // --- NEW AUDIO SYSTEM (FILES) ---
+        // These look for files named "bell.mp3" and "warn.mp3" in your GitHub folder
+        const bellSound = new Audio('bell.mp3');
+        const warnSound = new Audio('warn.mp3');
+
+        function playBell() {
+            bellSound.currentTime = 0; // Rewind to start if already playing
+            bellSound.play().catch(e => console.log("Audio play failed (user interaction needed first)", e));
         }
 
-        // 3 Bell Sounds
-        function playBellSequence() {
-            setTimeout(() => playTone(660, 'triangle', 1.5, 0.8), 0);
-            setTimeout(() => playTone(660, 'triangle', 1.5, 0.8), 600);
-            setTimeout(() => playTone(660, 'triangle', 2.5, 0.8), 1200);
-        }
-
-        // 3 Fast Beeps
-        function play3Beeps() {
-            setTimeout(() => playTone(800, 'square', 0.1, 0.5), 0);
-            setTimeout(() => playTone(800, 'square', 0.1, 0.5), 150);
-            setTimeout(() => playTone(800, 'square', 0.1, 0.5), 300);
+        function playWarn() {
+            warnSound.currentTime = 0;
+            warnSound.play().catch(e => console.log("Audio error", e));
         }
 
         // --- REMOTE CONTROL LOGIC ---
@@ -183,11 +165,8 @@
             const key = e.keyCode;
             const isSetup = !document.getElementById('setup-screen').classList.contains('hidden');
 
-            if (isSetup) {
-                handleSetupNav(key);
-            } else {
-                handleTimerNav(key);
-            }
+            if (isSetup) handleSetupNav(key);
+            else handleTimerNav(key);
         });
 
         function handleSetupNav(key) {
@@ -199,14 +178,11 @@
                 currentSelection++;
                 if (currentSelection > 2) currentSelection = 0;
                 updateHighlights();
-            } 
-            else if (key === 38) { // Up (Add 30s)
+            } else if (key === 38) { // Up
                 changeTime(30);
-            } 
-            else if (key === 40) { // Down (Subtract 30s)
+            } else if (key === 40) { // Down
                 changeTime(-30);
-            }
-            else if (key === 13 || key === 179) { // Enter
+            } else if (key === 13 || key === 179) { // Enter
                 if (currentSelection === 2) startTimer();
             }
         }
@@ -249,7 +225,11 @@
         function startTimer() {
             document.getElementById('setup-screen').classList.add('hidden');
             document.getElementById('timer-screen').classList.remove('hidden');
-            if (audioCtx.state === 'suspended') audioCtx.resume();
+            
+            // Play faint sound to unlock audio engine on some browsers
+            bellSound.volume = 1.0;
+            warnSound.volume = 1.0;
+            
             startRound();
         }
 
@@ -257,7 +237,7 @@
             isWorking = true;
             currentSeconds = setupWorkSeconds;
             updateUI("ROLL", "rolling-bg", "text-roll");
-            playBellSequence(); 
+            playBell(); 
             runInterval();
         }
 
@@ -265,7 +245,7 @@
             isWorking = false;
             currentSeconds = setupRestSeconds;
             updateUI("REST", "resting-bg", "text-rest");
-            playBellSequence();
+            playBell();
             runInterval();
         }
 
@@ -280,7 +260,7 @@
 
                 // 30 Seconds Warning
                 if (isWorking && currentSeconds === 30) {
-                    play3Beeps();
+                    playWarn();
                     const statusEl = document.getElementById('status');
                     statusEl.innerText = "30 SECONDS!";
                     statusEl.classList.add('text-warn');
