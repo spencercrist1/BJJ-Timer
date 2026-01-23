@@ -214,6 +214,8 @@
         let interval;
         let isWorking = true;
         let isPaused = false;
+        let isTransitioning = false; // Safety lock for double bells
+        
         let setupWorkSeconds = 300; 
         let setupRestSeconds = 60;
         let currentSeconds = 0;
@@ -305,14 +307,14 @@
 
         // --- TIMER LOGIC ---
         function startTimer() {
-            // Audio Unlock (Important for FireStick)
+            // Audio Unlock
             warnEl.volume = 0;
             warnEl.play().then(() => {
                 warnEl.pause();
                 warnEl.volume = 1;
             }).catch(e => console.log("Unlock failed", e));
             
-            // Play initial Bell manually (since we removed it from startRound)
+            // Initial Start Bell
             playBell();
 
             document.getElementById('setup-screen').classList.add('hidden');
@@ -324,7 +326,6 @@
             isWorking = true;
             currentSeconds = setupWorkSeconds;
             updateUI("ROLL", "rolling-bg", "text-roll");
-            // playBell() REMOVED to prevent double ring
             runInterval();
         }
 
@@ -332,7 +333,6 @@
             isWorking = false;
             currentSeconds = setupRestSeconds;
             updateUI("REST", "resting-bg", "text-rest");
-            // playBell() REMOVED to prevent double ring
             runInterval();
         }
 
@@ -361,13 +361,18 @@
                     }, 2500);
                 }
 
-                // ZERO CHECK (TRANSITION)
+                // ZERO CHECK WITH SAFETY LOCK
                 if (currentSeconds <= 0) {
-                    playBell(); // Ring bell ONCE right at zero
-                    clearInterval(interval);
+                    // Prevent Double Ringing (Race Condition Fix)
+                    if (isTransitioning) return;
+                    isTransitioning = true;
                     
-                    // Wait 1 second before flipping visuals
+                    clearInterval(interval);
+                    playBell(); // Ring ONCE
+                    
+                    // Wait 1 second before flipping
                     setTimeout(() => {
+                        isTransitioning = false; // Release Lock
                         if (isWorking) startRest();
                         else startRound();
                     }, 1000);
