@@ -305,12 +305,15 @@
 
         // --- TIMER LOGIC ---
         function startTimer() {
-            // Audio Unlock
+            // Audio Unlock (Important for FireStick)
             warnEl.volume = 0;
             warnEl.play().then(() => {
                 warnEl.pause();
                 warnEl.volume = 1;
             }).catch(e => console.log("Unlock failed", e));
+            
+            // Play initial Bell manually (since we removed it from startRound)
+            playBell();
 
             document.getElementById('setup-screen').classList.add('hidden');
             document.getElementById('timer-screen').classList.remove('hidden');
@@ -321,7 +324,7 @@
             isWorking = true;
             currentSeconds = setupWorkSeconds;
             updateUI("ROLL", "rolling-bg", "text-roll");
-            playBell(); 
+            // playBell() REMOVED to prevent double ring
             runInterval();
         }
 
@@ -329,7 +332,7 @@
             isWorking = false;
             currentSeconds = setupRestSeconds;
             updateUI("REST", "resting-bg", "text-rest");
-            playBell();
+            // playBell() REMOVED to prevent double ring
             runInterval();
         }
 
@@ -347,7 +350,7 @@
 
                 // 30 Seconds Warning
                 if (isWorking && currentSeconds === 30) {
-                    playWarn(); // Plays INSTANTLY on 30
+                    playWarn(); 
                     const statusEl = document.getElementById('status');
                     statusEl.innerText = "30 SECONDS!";
                     statusEl.classList.add('text-warn');
@@ -358,12 +361,12 @@
                     }, 2500);
                 }
 
-                // ZERO CHECK - CHANGED TO TRIGGER AT 0 INSTEAD OF -1
+                // ZERO CHECK (TRANSITION)
                 if (currentSeconds <= 0) {
-                    playBell(); // Plays INSTANTLY on 0
+                    playBell(); // Ring bell ONCE right at zero
                     clearInterval(interval);
                     
-                    // Wait 1 second so you see 0:00 before switching
+                    // Wait 1 second before flipping visuals
                     setTimeout(() => {
                         if (isWorking) startRest();
                         else startRound();
