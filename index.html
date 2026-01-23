@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Carlson Gracie Timer</title>
     <style>
+        * { box-sizing: border-box; } /* Ensures padding doesn't break layout */
+
         body {
             font-family: 'Arial', sans-serif;
             background-color: #000000;
@@ -14,11 +16,14 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            min-height: 100vh;
+            height: 100vh;
             margin: 0;
+            
+            /* TV SAFE ZONE: Adds space around edges so TV doesn't cut it off */
+            padding: 2vmin; 
+            
             touch-action: manipulation;
-            /* COMMAND TO HIDE THE MOUSE CURSOR: */
-            cursor: none; 
+            cursor: none; /* Hides cursor */
             
             /* Background Image */
             background-image: linear-gradient(rgba(0,0,0,0.85), rgba(0,0,0,0.85)), url('logo.png');
@@ -28,341 +33,41 @@
         }
 
         /* --- BIG TIMER --- */
+        /* Changed to vmin so it scales perfectly with screen height */
         #timer-display { 
-            font-size: 25vw; 
+            font-size: 35vmin; 
             font-weight: bold; 
             line-height: 1; 
             text-shadow: 4px 4px 8px rgba(0,0,0,0.8);
-            margin-bottom: 20px;
+            margin-bottom: 2vh;
         }
         
         #status { 
-            font-size: 8vw; 
+            font-size: 10vmin; 
             text-transform: uppercase; 
             letter-spacing: 5px; 
-            margin-bottom: 20px;
+            margin-bottom: 4vh;
             font-weight: bold;
             text-shadow: 2px 2px 4px rgba(0,0,0,1);
         }
 
         /* --- SETUP BOXES --- */
+        .setup {
+            width: 90%;
+            max-width: 1000px;
+        }
+
         .input-group {
             display: flex;
             align-items: center;
             justify-content: center;
-            margin: 15px;
+            margin: 2vh 0;
             padding: 10px;
-            border: 3px solid transparent; 
-            border-radius: 10px;
-            background-color: rgba(0,0,0,0.5); 
+            border: 4px solid transparent; 
+            border-radius: 15px;
+            background-color: rgba(0,0,0,0.6); 
         }
 
         .selected {
-            border: 3px solid #facc15; 
-            background-color: rgba(255, 255, 255, 0.2);
-            transform: scale(1.05);
-        }
-
-        .time-display-box { 
-            font-size: 2.5rem; 
-            width: 140px; 
-            text-align: center; 
-            padding: 10px; 
-            background: rgba(255,255,255,0.95);
-            color: black;
-            border-radius: 5px;
-            font-weight: bold;
-            margin: 0 15px;
-        }
-
-        label { 
-            font-size: 2rem; 
-            font-weight: bold; 
-            margin-right: 10px;
-            text-shadow: 2px 2px 4px black;
-        }
-
-        /* --- BUTTONS --- */
-        .adj-btn {
-            background: #444;
-            color: white;
-            border: 2px solid #666;
-            width: 60px;
-            height: 60px;
-            font-size: 2rem;
-            border-radius: 50%;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        .adj-btn:active { background: #facc15; color: black; }
-
-        #start-btn { 
-            font-size: 2.5rem; 
-            padding: 20px 50px; 
-            margin-top: 30px;
-            background-color: #0056b3; 
-            color: white; 
-            border: 3px solid white; 
-            border-radius: 10px; 
-            box-shadow: 0 4px 6px rgba(0,0,0,0.5);
-            cursor: pointer;
-            font-weight: bold;
-        }
-        
-        #reset-btn {
-            margin-top: 20px;
-            background-color: #dc3545;
-            padding: 15px 40px;
-            font-size: 1.5rem;
-            border: 2px solid white;
-            border-radius: 8px;
-            color: white;
-            cursor: pointer;
-        }
-
-        /* --- COLORS --- */
-        .rolling-bg { border: 10px solid #28a745; }
-        .resting-bg { border: 10px solid #dc3545; }
-        .text-roll { color: #4ade80; }
-        .text-rest { color: #f87171; }
-        .text-warn { color: #facc15; }
-
-        .hidden { display: none !important; }
-        
-        .instructions {
-            margin-top: 40px;
-            color: #ccc;
-            font-size: 1rem;
-            background: rgba(0,0,0,0.6);
-            padding: 10px;
-            border-radius: 5px;
-        }
-    </style>
-</head>
-<body>
-
-    <audio id="bellPlayer" src="bell.mp3" preload="auto"></audio>
-    <audio id="warnPlayer" src="warn.mp3" preload="auto"></audio>
-
-    <div id="setup-screen">
-        <h1 style="text-shadow: 2px 2px 4px black; margin-bottom: 20px;">JIU-JITSU TIMER</h1>
-        
-        <div class="input-group selected" id="sel-0" onclick="selectItem(0)">
-            <button class="adj-btn" onclick="manualChange(0, -30)">-</button>
-            <div>
-                <label>ROUND</label> 
-                <div id="workDisplay" class="time-display-box">5:00</div>
-            </div>
-            <button class="adj-btn" onclick="manualChange(0, 30)">+</button>
-        </div>
-
-        <div class="input-group" id="sel-1" onclick="selectItem(1)">
-            <button class="adj-btn" onclick="manualChange(1, -30)">-</button>
-            <div>
-                <label>REST</label> 
-                <div id="restDisplay" class="time-display-box">1:00</div>
-            </div>
-            <button class="adj-btn" onclick="manualChange(1, 30)">+</button>
-        </div>
-
-        <button id="start-btn" class="input-group" id="sel-2" onclick="startTimer()">START TIMER</button>
-
-        <div class="instructions">
-            <strong>REMOTE:</strong> Arrows to set time. Center to Start.<br>
-            <strong>PHONE:</strong> Tap buttons to set time.
-        </div>
-    </div>
-
-    <div id="timer-screen" class="hidden">
-        <div id="status">PREPARE</div>
-        <div id="timer-display" onclick="togglePause()">00:00</div>
-        
-        <button id="reset-btn" onclick="resetTimer()">RESET</button>
-        <div style="font-size: 1rem; color: #ccc; margin-top: 20px;">
-            (Remote: Up Arrow to Reset)
-        </div>
-    </div>
-
-    <script>
-        // --- VARIABLES ---
-        let interval;
-        let isWorking = true;
-        let isPaused = false;
-        let setupWorkSeconds = 300; 
-        let setupRestSeconds = 60;
-        let currentSeconds = 0;
-        let currentSelection = 0; 
-
-        // --- AUDIO ---
-        const bellEl = document.getElementById('bellPlayer');
-        const warnEl = document.getElementById('warnPlayer');
-
-        function playBell() {
-            bellEl.currentTime = 0;
-            bellEl.play().catch(e => console.log("Bell Error:", e));
-        }
-
-        function playWarn() {
-            warnEl.currentTime = 0;
-            warnEl.play().catch(e => console.log("Warn Error:", e));
-        }
-
-        // --- INPUTS ---
-        document.addEventListener('keydown', function(e) {
-            const key = e.keyCode;
-            const isSetup = !document.getElementById('setup-screen').classList.contains('hidden');
-            if (isSetup) handleSetupNav(key);
-            else handleTimerNav(key);
-        });
-
-        function manualChange(selectionIndex, amount) {
-            selectItem(selectionIndex);
-            changeTime(amount);
-        }
-
-        function selectItem(index) {
-            currentSelection = index;
-            updateHighlights();
-        }
-
-        function handleSetupNav(key) {
-            if (key === 37) { // Left
-                currentSelection--;
-                if (currentSelection < 0) currentSelection = 2;
-                updateHighlights();
-            } else if (key === 39) { // Right
-                currentSelection++;
-                if (currentSelection > 2) currentSelection = 0;
-                updateHighlights();
-            } else if (key === 38) { // Up
-                changeTime(30);
-            } else if (key === 40) { // Down
-                changeTime(-30);
-            } else if (key === 13 || key === 179) { // Enter
-                if (currentSelection === 2) startTimer();
-            }
-        }
-
-        function handleTimerNav(key) {
-            if (key === 13 || key === 179) togglePause();
-            if (key === 38) resetTimer();
-        }
-
-        function updateHighlights() {
-            document.getElementById('sel-0').classList.remove('selected');
-            document.getElementById('sel-1').classList.remove('selected');
-            document.getElementById('start-btn').classList.remove('selected');
-
-            if (currentSelection === 0) document.getElementById('sel-0').classList.add('selected');
-            if (currentSelection === 1) document.getElementById('sel-1').classList.add('selected');
-            if (currentSelection === 2) document.getElementById('start-btn').classList.add('selected');
-        }
-
-        function changeTime(amount) {
-            if (currentSelection === 0) {
-                setupWorkSeconds += amount;
-                if (setupWorkSeconds < 30) setupWorkSeconds = 30;
-                document.getElementById('workDisplay').innerText = formatTime(setupWorkSeconds);
-            }
-            if (currentSelection === 1) {
-                setupRestSeconds += amount;
-                if (setupRestSeconds < 30) setupRestSeconds = 30;
-                document.getElementById('restDisplay').innerText = formatTime(setupRestSeconds);
-            }
-        }
-
-        function formatTime(sec) {
-            const m = Math.floor(sec / 60);
-            const s = sec % 60;
-            return `${m}:${s.toString().padStart(2, '0')}`;
-        }
-
-        // --- TIMER LOGIC ---
-        function startTimer() {
-            // Audio Unlock
-            warnEl.volume = 0;
-            warnEl.play().then(() => {
-                warnEl.pause();
-                warnEl.volume = 1;
-            }).catch(e => console.log("Unlock failed", e));
-
-            document.getElementById('setup-screen').classList.add('hidden');
-            document.getElementById('timer-screen').classList.remove('hidden');
-            startRound();
-        }
-
-        function startRound() {
-            isWorking = true;
-            currentSeconds = setupWorkSeconds;
-            updateUI("ROLL", "rolling-bg", "text-roll");
-            playBell(); 
-            runInterval();
-        }
-
-        function startRest() {
-            isWorking = false;
-            currentSeconds = setupRestSeconds;
-            updateUI("REST", "resting-bg", "text-rest");
-            playBell();
-            runInterval();
-        }
-
-        function runInterval() {
-            clearInterval(interval);
-            isPaused = false;
-            updateDisplay();
-            interval = setInterval(() => {
-                if (isPaused) return;
-                currentSeconds--;
-                updateDisplay();
-
-                if (isWorking && currentSeconds === 30) {
-                    playWarn();
-                    const statusEl = document.getElementById('status');
-                    statusEl.innerText = "30 SECONDS!";
-                    statusEl.classList.add('text-warn');
-                    setTimeout(() => {
-                        statusEl.innerText = "ROLL";
-                        statusEl.classList.remove('text-warn');
-                        statusEl.classList.add('text-roll');
-                    }, 2500);
-                }
-
-                if (currentSeconds < 0) {
-                    clearInterval(interval);
-                    if (isWorking) startRest();
-                    else startRound();
-                }
-            }, 1000);
-        }
-
-        function updateUI(text, bg, color) {
-            document.body.className = bg;
-            const s = document.getElementById('status');
-            const t = document.getElementById('timer-display');
-            s.innerText = text;
-            s.className = ""; t.className = ""; 
-            s.classList.add(color); t.classList.add(color);
-        }
-
-        function updateDisplay() {
-            document.getElementById('timer-display').innerText = formatTime(currentSeconds);
-        }
-
-        function togglePause() {
-            isPaused = !isPaused;
-            document.getElementById('status').innerText = isPaused ? "PAUSED" : (isWorking ? "ROLL" : "REST");
-        }
-
-        function resetTimer() {
-            clearInterval(interval);
-            location.reload();
-        }
-        
-        // Init
-        updateHighlights();
-    </script>
-</body>
-</html>
+            border: 4px solid #facc15; 
+            background-color: rgba(255, 255,
