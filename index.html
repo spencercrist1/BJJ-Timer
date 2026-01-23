@@ -21,7 +21,7 @@
             width: 100vw;
             margin: 0;
             padding: 0;
-            overflow: hidden; /* Prevents scrolling */
+            overflow: hidden; 
             
             touch-action: manipulation;
             cursor: none;
@@ -35,12 +35,11 @@
 
         /* --- BIG TIMER --- */
         #timer-display { 
-            /* Slightly smaller to ensure perfect centering */
             font-size: 28vmin; 
             font-weight: bold; 
             line-height: 1; 
             text-shadow: 4px 4px 8px rgba(0,0,0,0.8);
-            margin: 0; /* Remove margins to let Flexbox center it */
+            margin: 0; 
         }
         
         #status { 
@@ -144,7 +143,7 @@
             align-items: center;
             justify-content: center;
             width: 100%;
-            height: 100%; /* Ensures it fills the screen to center properly */
+            height: 100%; 
         }
 
         /* --- COLORS --- */
@@ -306,6 +305,7 @@
 
         // --- TIMER LOGIC ---
         function startTimer() {
+            // Audio Unlock
             warnEl.volume = 0;
             warnEl.play().then(() => {
                 warnEl.pause();
@@ -337,13 +337,17 @@
             clearInterval(interval);
             isPaused = false;
             updateDisplay();
+            
             interval = setInterval(() => {
                 if (isPaused) return;
+                
+                // DECREMENT
                 currentSeconds--;
                 updateDisplay();
 
+                // 30 Seconds Warning
                 if (isWorking && currentSeconds === 30) {
-                    playWarn();
+                    playWarn(); // Plays INSTANTLY on 30
                     const statusEl = document.getElementById('status');
                     statusEl.innerText = "30 SECONDS!";
                     statusEl.classList.add('text-warn');
@@ -354,10 +358,16 @@
                     }, 2500);
                 }
 
-                if (currentSeconds < 0) {
+                // ZERO CHECK - CHANGED TO TRIGGER AT 0 INSTEAD OF -1
+                if (currentSeconds <= 0) {
+                    playBell(); // Plays INSTANTLY on 0
                     clearInterval(interval);
-                    if (isWorking) startRest();
-                    else startRound();
+                    
+                    // Wait 1 second so you see 0:00 before switching
+                    setTimeout(() => {
+                        if (isWorking) startRest();
+                        else startRound();
+                    }, 1000);
                 }
             }, 1000);
         }
@@ -385,6 +395,7 @@
             location.reload();
         }
         
+        // Init
         updateHighlights();
     </script>
 </body>
